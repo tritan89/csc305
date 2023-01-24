@@ -16,7 +16,7 @@ else
     false
 
 
-let oldest= is_older(d1,d2);;
+(* let oldest= is_older(d1,d2);; *)
 
 let has31 = [1;3;5;7;8;10;12]
 let has30 = [4;6;9;11] 
@@ -35,7 +35,7 @@ let days_in_month(date:int*int ):int option   =
     else
       Some 28
 
-(* let num = days_in_month(2100, 2);; *)
+ (* let num = days_in_month(2100, 2);;  *)
 
 let rec range (a:int  ) (b:int  ) (d1:int ) (d2:int )  =
   if a > b then []
@@ -53,7 +53,7 @@ let dates = range 1 clear year month in Some dates
 
 
 
-let blah = dates_in_month((2100,3));;
+(* let blah = dates_in_month((2100,3));; *)
 
 
 
@@ -77,30 +77,53 @@ else
   if snd3(date) = 1 then
     Some (thd3(date))
   else
-    Some (sum(1, date) + thd3(date))
+    let total = Option.get(sum(1, date)) in
+    Some (total + thd3(date))
 
 
-let bluh = num_of_days((2001, 1, 23));;
+(* let bluh = num_of_days(2001, 11, 23);; *)
  
 
 
 
-let rec neg((a:int ), (n:int ), (year:int )):int *int    =
-  if  n <= 31 then n, a
-  else neg((a+1), (n - days_in_month(year,a+1)), year)
+let rec neg((a:int ), (n:int ), (year:int )):int*int     =
+  if  n <= 31 then  n, a
+  else 
+    let days = Option.get(days_in_month(year,a+1)) in
+    neg((a+1), (n - days), year)
 
 
-let nth_day((year:int ), (n:int )):int *int *int  = 
+let nth_day((year:int ), (n:int )):int*int*int   = 
     if n <=31 then 
-      (year, 1, n)
+       (year, 1, n)
     else
       let day, month = neg(0, n, year) in 
-      (year, month, day)
+       (year, month, day)
       
-let wack = nth_day(2001, 165)
+(* let wack = nth_day(2001, 165) *)
 ;;
-   
+
+
+type country = {id:string; name:string; rates:int list } ;;
+
+let file = "csc330_a1.csv"
+
+let read_file path =
+let fp = open_in path in
+let s = really_input_string fp (in_channel_length fp) in
+close_in fp;
+s
 
 
 
-  
+
+;;
+
+let sort(src:string ):string
+
+let get_records(file:string):country list =
+  let output = read_file file in
+  let clist = String.split_on_char ',' output in
+    List.iter clist
+
+
