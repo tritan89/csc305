@@ -70,16 +70,28 @@ let num_of_days(date: int*int*int):int =
 
 let bluh = num_of_days((2001, 1, 23));;
  
+
+
+
+let rec neg((a:int), (n:int), (year:int)):int*int   =
+  if  n <= 31 then a, n
+  else a, (n - snd(neg((a+1), (n - days_in_month(year, (a+1))), year)) )
+
+
 let nth_day((year:int), (n:int)):int*int*int = 
     if n <=31 then 
       (year, 1, n)
     else
+      let month, day = neg(0, n, year)in 
+      (year, month, day)
+      
 
 
 
-let rec neg((a:int), (n:int), (year:int)):int*int  =
-  if  n <= 31 then (a,n)
-  else neg(a+1, n - days_in_month(year, a+1),year) in neg
+let wack = nth_day(2001, 50)
+;;
    
 
 
+
+  
