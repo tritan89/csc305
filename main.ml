@@ -106,9 +106,9 @@ let wack = nth_day(2001, 165)
 ;;
 
 
-type country = {name:string; id:string; rates:int list } ;;
+type country = {name:string; id:string; rates:float option list } 
 
-let file = "csc330_a1.csv"
+(* let file = "csc330_a1.csv" *)
 
 let read_file path =
 let fp = open_in path in
@@ -118,21 +118,23 @@ s
 
 
 
-
-;;
 (* takes in a list of strings and converts each to floats *)
-let rec to_float(nums: string list) :float list =
-  match nums with
-  | [] -> []
-  | 
+let to_float(nums: string list) = 
+  let rec floater(numbers) =
+    match numbers with
+    | [] -> []
+    | head :: tail -> Float.of_string_opt(head):: floater(tail)
+  in floater(nums)
+
 
 (* Takes in a list and outputs a country record *)
 let rec sort(src:string list): country  = 
   match src with 
-    | [] -> []
-    | head:: mid :: tail -> {name = head; id= mid; rates: tail }
+    | [] -> failwith("ERR: bad row")
+    | _::[] -> failwith("ERR: bad row") 
+    | head:: mid :: tail -> {name = head; id= mid; rates= to_float(tail)}
 
-;;
+
 let get_records(file:string):country list =
   let output = read_file file in
   let new_list = String.split_on_char '\n' output in
@@ -143,10 +145,21 @@ let get_records(file:string):country list =
   in loop(new_list)
 
 
-  
+ let recs = get_records("csc330_a1.csv") 
 
+;;
 
+let avail(data:country)=
+  let years = data.rates in
+  let rec loop (sum, rates) =
+    match rates with 
+    | [] -> rates 
+    | hd::[] ->  -> sum + 0 
 
    
 
-
+    let rec cumulative_sum xs =
+      match xs with
+      | [] -> xs
+      | x :: [] -> xs
+      | head :: neck :: rest -> head :: cumulative_sum ((head + neck) :: rest)
