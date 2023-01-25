@@ -30,14 +30,16 @@ let days_in_month(date:int*int ):int option   =
       Some 31
     else if List.mem month has30 then
       Some 30
-    else if fst(date) mod 4 =0 || (fst(date) mod 400 =0 && fst(date) mod 100 =0) then
+    else if fst(date) mod 4 =0 && fst(date) mod 400 =0 then
+      Some 29
+    else if fst(date) mod 4 =0 && fst(date) mod 100 !=0 then
       Some 29
     else
       Some 28
 
  (* let num = days_in_month(2100, 2);;  *)
 
-let rec range (a:int  ) (b:int  ) (d1:int ) (d2:int )  =
+let rec range (a:int) (b:int) (d1:int) (d2:int)  =
   if a > b then []
   else (d1, d2, a) :: range (a + 1) b d1 d2
 
@@ -100,11 +102,11 @@ let nth_day((year:int ), (n:int )):int*int*int   =
       let day, month = neg(0, n, year) in 
        (year, month, day)
       
-(* let wack = nth_day(2001, 165) *)
+let wack = nth_day(2001, 165) 
 ;;
 
 
-type country = {id:string; name:string; rates:int list } ;;
+type country = {name:string; id:string; rates:int list } ;;
 
 let file = "csc330_a1.csv"
 
@@ -118,12 +120,33 @@ s
 
 
 ;;
+(* takes in a list of strings and converts each to floats *)
+let rec to_float(nums: string list) :float list =
+  match nums with
+  | [] -> []
+  | 
 
-let sort(src:string ):string
+(* Takes in a list and outputs a country record *)
+let rec sort(src:string list): country  = 
+  match src with 
+    | [] -> []
+    | head:: mid :: tail -> {name = head; id= mid; rates: tail }
 
+;;
 let get_records(file:string):country list =
   let output = read_file file in
-  let clist = String.split_on_char ',' output in
-    List.iter clist
+  let new_list = String.split_on_char '\n' output in
+  let rec loop(recs) =
+    match recs with 
+    | [] -> []
+    | loopst::loopend -> sort(String.split_on_char ',' loopst) :: loop(loopend)
+  in loop(new_list)
+
+
+  
+
+
+
+   
 
 
