@@ -149,17 +149,88 @@ let get_records(file:string):country list =
 
 ;;
 
+let check_rate(rate) =
+  match rate with 
+  | None -> 0
+  | Some rate -> 1
+
+
 let avail(data:country)=
-  let years = data.rates in
-  let rec loop (sum, rates) =
+
+let years = data.rates in
+  let rec loop(numbers, sum) =
+  match numbers with
+  | [] -> sum
+  | h :: t -> loop(t, sum +check_rate(h))
+  in loop(years, 0)
+  
+
+  let af = {name = "Afghanistan"; id = "AFG";
+  rates =
+   [None; None; None; None; None; None; None; None; None; None; None; None;
+    None; None; None; None; None; None; None; None; None; None; None; None;
+    None; None; None; None; None; None; None; None; None; None; None; None;
+    None; None; None; None; None; None; None; None; None; Some 12.68626872;
+    Some 6.78459655; Some 8.680570785; Some 26.41866415; Some (-6.811161089);
+    Some 2.178537524; Some 11.80418581; Some 6.441212809; Some 7.385771784;
+    Some 4.673996035; Some (-0.661709165); Some 4.383891955;
+    Some 4.975951506; Some 0.626149149; Some 2.302372515; None; None]}
+
+let count = avail(af);;
+
+
+
+
+
+
+let last(data:country)=
+  let rec loop(rates, curr, year, curr_year) =
+  match rates with
+  | [] -> curr , year
+  | h :: t -> (
+    match h with
+    | None -> loop(t, curr, year, curr_year+1)
+    | Some float -> loop(t, h, curr_year+1, curr_year+1)
+  )
+  in loop(data.rates, Some 0.0, 1959, 1959)
+
+
+let count = last(af);;
+
+
+
+
+let minmax(record:country)=
+  let rec loop(rates, min, max, year_min, year_max, curr_year)=
     match rates with 
-    | [] -> rates 
-    | hd::[] ->  -> sum + 0 
+    | [] -> (min,year_min),(max, year_max)
+    | head :: tail ->
+      (match head with 
+      |None -> loop(tail, min, max, year_min, year_max, curr_year+1)
+      |Some a ->(
+        if a > max then 
+          loop(tail, min, a, year_min, curr_year+1, curr_year+1) 
+        else if a < min then
+          loop(tail, a, max, curr_year+1, year_max, curr_year+1)
+        else
+          loop(tail, min, max, year_min, year_max, curr_year+1)
+      )
+      )in loop(record.rates, Float.max_float, Float.min_float, 1959,1959,1959)
+    
+let minny = minmax(af);;
 
-   
+let summarize(clist, identifier) =
+  let rec loop(clist) =
+    match clist with 
+    | [] ->[]
+    | hd::tl -> (
+      if hd.id = identifier then
+        let latest = last(hd) in
+        let min, max = minmax(hd) in
+        let output = "Country: " ^ hd.name ^'(' ^hd.id^ ')' ^
+         
 
-    let rec cumulative_sum xs =
-      match xs with
-      | [] -> xs
-      | x :: [] -> xs
-      | head :: neck :: rest -> head :: cumulative_sum ((head + neck) :: rest)
+    ) 
+
+
+
