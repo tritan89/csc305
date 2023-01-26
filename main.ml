@@ -220,17 +220,40 @@ let minmax(record:country)=
 let minny = minmax(af);;
 
 let summarize(clist, identifier) =
-  let rec loop(clist) =
-    match clist with 
-    | [] ->[]
+  let rec loop(countries, iden) =
+    match countries with 
+    | [] -> None
     | hd::tl -> (
-      if hd.id = identifier then
+      if hd.id = iden then
         let latest = last(hd) in
+        let str_last = Float.to_string(Option.get(fst(latest)))in
+        let year_last = Int.to_string(snd(latest)) in
+        let num_of =  Int.to_string(avail(hd)) in
         let min, max = minmax(hd) in
-        let output = "Country: " ^ hd.name ^'(' ^hd.id^ ')' ^
-         
+        let str_min = Float.to_string(fst(min))in
+        let str_max = Float.to_string(fst(max))in
+        let year_max = Int.to_string(snd(max)) in
+        let year_min = Int.to_string(snd(min)) in
+        let output = "Country: " ^ hd.name ^"(" ^hd.id^ ")\n" ^ 
+        "Records available:" ^ num_of ^ "years\n" ^
+        "Last record:" ^ year_last ^ "with rate of" ^ str_last ^"%\n" ^
+        "Lowest rate:" ^ year_min ^ "with rate of" ^ str_min ^"%\n" ^
+        "Highest rate:" ^ year_max ^ "with rate of" ^ str_max ^"%\n" 
+      in Some output
 
-    ) 
+      else 
+        loop(tl, iden)  
+
+    )  in loop(clist, identifier) 
 
 
+let word = summarize(get_records("csc330_a1.csv"), "BOL");;
 
+(* 
+    let latest = last(hd) in
+    let min, max = minmax(hd) in
+    let str_min = Float.to_string(fst(min))in
+    let str_max = Float.to_string(fst(max))in
+    let year_max = Int.to_string(snd(max)) in
+    let year_min = Int.to_string(snd(min)) in
+    let output = "Country: " ^ hd.name ^'(' ^hd.id^ ")\n" ^  *)
