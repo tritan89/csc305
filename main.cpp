@@ -13,6 +13,32 @@
 // Shortcut to avoid Eigen:: everywhere, DO NOT USE IN .h
 using namespace Eigen;
 
+float quadSolver(const float &a, const float &b, const float &c ){
+    float discrim = b*b - 4* a *c;
+    float root1 , root2;
+    if (discrim < 0 ) return -1000;
+    else if (discrim == 0 ) return - 0.5 * b / a;
+    else{
+          float q = (b > 0) ?
+            -0.5 * (b + sqrt(discrim)) :
+            -0.5 * (b - sqrt(discrim));
+        root1 = q / a;
+        root2 = c / q;
+       
+    }
+    if (root1 <0 && root2 < 0){
+        return -1000; 
+    } 
+
+    if (root1 > root2){
+        return root2; 
+    }  
+    
+    else return root1;
+
+    
+}
+
 void raytrace_sphere()
 {
     std::cout << "Simple ray tracer, one sphere with orthographic projection" << std::endl;
@@ -26,7 +52,7 @@ void raytrace_sphere()
 
     // The camera is orthographic, pointing in the direction -z and covering the
     // unit square (-1,1) in x and y
-    const Vector3d image_origin(-1, 1, 1);
+    const Vector3d image_origin(-1, 1, 1); //C
     const Vector3d x_displacement(2.0 / C.cols(), 0, 0);
     const Vector3d y_displacement(0, -2.0 / C.rows(), 0);
 
@@ -40,13 +66,25 @@ void raytrace_sphere()
             const Vector3d pixel_center = image_origin + double(i) * x_displacement + double(j) * y_displacement;
 
             // Prepare the ray
-            const Vector3d ray_origin = pixel_center;
-            const Vector3d ray_direction = camera_view_direction;
+            const Vector3d ray_origin = camera_origin; //O
+            const Vector3d ray_direction = pixel_center- camera_origin; //D
 
+            const double sphere_radius = 0.9;
+            const Vector3d L = ray_origin - image_origin;
+            float a = ray_direction.dot(ray_direction);
+            float b = 2 * ray_direction.dot(L);
+            float c = L.dot(L) - sphere_radius*sphere_radius;
+
+            float inter = quadSolver(a, b, c);
+            bool hit = false;
+            if ( inter == -1000){
+                hit = false;
+            }
+            else inter = true
             // Intersect with the sphere
             // NOTE: this is a special case of a sphere centered in the origin and for orthographic rays aligned with the z axis
             Vector2d ray_on_xy(ray_origin(0), ray_origin(1));
-            const double sphere_radius = 0.9;
+          
 
             if (ray_on_xy.norm() < sphere_radius)
             {
