@@ -13,28 +13,23 @@
 // Shortcut to avoid Eigen:: everywhere, DO NOT USE IN .h
 using namespace Eigen;
 
-float quadSolver(const float &a, const float &b, const float &c ){
-    float discrim = b*b - 4* a *c;
+float quadSolver(const Vector3d &d, const Vector3d &e, const Vector3d &c, float r ){
+    const Vector3d b = e - c;
+    float discrim = d.dot(b)*d.dot(b) - d.dot(d)*(b.dot(b)- r*r);
     float root1 , root2;
-    if (discrim < 0 ) return -1000;
-    else if (discrim == 0 ) return - 0.5 * b / a;
-    else{
-          float q = (b > 0) ?
-            -0.5 * (b + sqrt(discrim)) :
-            -0.5 * (b - sqrt(discrim));
-        root1 = q / a;
-        root2 = c / q;
-       
-    }
-    if (root1 <0 && root2 < 0){
-        return -1000; 
-    } 
+    if (discrim < 0 ) return false;
+    else if (discrim == 0 ) return  (-d.dot(b)) /(d.dot(d));
+    else {
+        root1 = (-d.dot(b) - sqrt(discrim))/(d.dot(d));
+        root2 = (-d.dot(b) + sqrt(discrim))/(d.dot(d));
+        if (root1 < 0 && root2 < 0)
+           return false;
 
-    if (root1 > root2){
-        return root2; 
-    }  
-    
-    else return root1;
+     if (root1 < root2)
+            return root1;
+        else return root2;
+}
+
 
     
 }
@@ -43,12 +38,14 @@ void raytrace_sphere()
 {
     std::cout << "Simple ray tracer, one sphere with orthographic projection" << std::endl;
 
-    const std::string filename("sphere_orthographic.png");
+    const std::string filename("sphere_orthographic1.png");
     MatrixXd C = MatrixXd::Zero(800, 800); // Store the color
     MatrixXd A = MatrixXd::Zero(800, 800); // Store the alpha mask
 
     const Vector3d camera_origin(0, 0, 3);
     const Vector3d camera_view_direction(0, 0, -1);
+
+
 
     // The camera is orthographic, pointing in the direction -z and covering the
     // unit square (-1,1) in x and y
@@ -56,6 +53,8 @@ void raytrace_sphere()
     const Vector3d x_displacement(2.0 / C.cols(), 0, 0);
     const Vector3d y_displacement(0, -2.0 / C.rows(), 0);
 
+    const Vector3d sphere_center(0, -10, -3);
+    const double sphere_radius = 0.9;
     // Single light source
     const Vector3d light_position(-1, 1, 1);
 
@@ -63,38 +62,32 @@ void raytrace_sphere()
     {
         for (unsigned j = 0; j < C.rows(); ++j)
         {
-            const Vector3d pixel_center = image_origin + double(i) * x_displacement + double(j) * y_displacement;
+            const Vector3d pixel_center = sphere_center + double(i) * x_displacement + double(j) * y_displacement;
 
             // Prepare the ray
             const Vector3d ray_origin = camera_origin; //O
             const Vector3d ray_direction = pixel_center- camera_origin; //D
 
-            const double sphere_radius = 0.9;
-            const Vector3d L = ray_origin - image_origin;
-            float a = ray_direction.dot(ray_direction);
-            float b = 2 * ray_direction.dot(L);
-            float c = L.dot(L) - sphere_radius*sphere_radius;
 
-            float inter = quadSolver(a, b, c);
-            bool hit = false;
-            if ( inter == -1000){
+
+
+
+            float inter = quadSolver(ray_direction, ray_origin, sphere_center, sphere_radius);
+            bool hit;
+            if ( inter == false){
                 hit = false;
             }
-            else inter = true
-            // Intersect with the sphere
-            // NOTE: this is a special case of a sphere centered in the origin and for orthographic rays aligned with the z axis
-            Vector2d ray_on_xy(ray_origin(0), ray_origin(1));
-          
+            else{
+                hit = true;
+            }
 
-            if (ray_on_xy.norm() < sphere_radius)
+            if (hit)
             {
                 // The ray hit the sphere, compute the exact intersection point
-                Vector3d ray_intersection(
-                    ray_on_xy(0), ray_on_xy(1),
-                    sqrt(sphere_radius * sphere_radius - ray_on_xy.squaredNorm()));
+                Vector3d ray_intersection = ray_origin + ray_direction*inter;
 
                 // Compute normal at the intersection point
-                Vector3d ray_normal = ray_intersection.normalized();
+                Vector3d ray_normal = ((ray_intersection - sphere_center)/sphere_radius).normalized();
 
                 // Simple diffuse model
                 C(i, j) = (light_position - ray_intersection).normalized().transpose() * ray_normal;
@@ -316,7 +309,9 @@ void raytrace_shading()
     std::cout << "Simple ray tracer, one sphere with different shading" << std::endl;
 
     const std::string filename("shading.png");
-    MatrixXd C = MatrixXd::Zero(800, 800); // Store the color
+    MatrixXd R = MatrixXd::Zero(800, 800); // Store the color
+    MatrixXd G = MatrixXd::Zero(800, 800); // Store the color
+    MatrixXd B = MatrixXd::Zero(800, 800); // Store the color
     MatrixXd A = MatrixXd::Zero(800, 800); // Store the alpha mask
 
     const Vector3d camera_origin(0, 0, 3);
@@ -340,9 +335,9 @@ void raytrace_shading()
     const Vector3d light_position(-1, 1, 1);
     double ambient = 0.1;
 
-    for (unsigned i = 0; i < C.cols(); ++i)
+    for (unsigned i = 0; i < R.cols(); ++i)
     {
-        for (unsigned j = 0; j < C.rows(); ++j)
+        for (unsigned j = 0; j < R.rows(); ++j)
         {
             const Vector3d pixel_center = image_origin + double(i) * x_displacement + double(j) * y_displacement;
 
@@ -366,14 +361,31 @@ void raytrace_shading()
                 Vector3d ray_normal = ray_intersection.normalized();
 
                 // TODO: Add shading parameter here
-                const double diffuse = (light_position - ray_intersection).normalized().dot(ray_normal);
-                const double specular = (light_position - ray_intersection).normalized().dot(ray_normal);
 
+                // need l a normal vector to light position
+                // need v a unit vector to view position
+                // need n surface normal vector
+                Vector3d l =  (light_position - ray_intersection).normalized();
+                Vector3d v =   (camera_origin - ray_intersection).normalized();
+                Vector3d h = ((l+v)/(l+v).norm()).normalized();
+                const double diffuse = std::max(0.0, (light_position - ray_intersection).normalized().dot(ray_normal));
+                const double specular = std::max(0.0, ray_normal.dot(h));
+                const double phong = pow(specular, specular_exponent);
                 // Simple diffuse model
-                C(i, j) = ambient + diffuse + specular;
+                R(i, j) = ambient + diffuse*diffuse_color(0) + phong*specular_color(0);
+                // Clamp to zero
+                R(i, j) = std::max(R(i, j), 0.);
+
+
+                G(i, j) = ambient + diffuse*diffuse_color(1) + phong*specular_color(1);
 
                 // Clamp to zero
-                C(i, j) = std::max(C(i, j), 0.);
+                G(i, j) = std::max(G(i, j), 0.);
+
+                B(i, j) = ambient + diffuse*diffuse_color(2) + phong*specular_color(2);
+
+                // Clamp to zero
+                B(i, j) = std::max(B(i, j), 0.);
 
                 // Disable the alpha mask for this pixel
                 A(i, j) = 1;
@@ -382,14 +394,14 @@ void raytrace_shading()
     }
 
     // Save to png
-    write_matrix_to_png(C, C, C, A, filename);
+    write_matrix_to_png(R, G, B, A, filename);
 }
 
 int main()
 {
     raytrace_sphere();
-    raytrace_parallelogram();
-    raytrace_perspective();
+    //raytrace_parallelogram();
+    //raytrace_perspective();
     raytrace_shading();
 
     return 0;
